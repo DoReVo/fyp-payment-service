@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\JWTHelper;
 use App\Payment;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
@@ -14,9 +15,14 @@ class PaymentController extends Controller
      * @return void
      */
     private $userId;
+    private $decodedToken;
     private $httpClient;
     public function __construct(Request $request)
     {
+        $jwtHandler = new JWTHelper;
+        $token = $request->bearerToken();
+        $this->decodedToken = $jwtHandler->decode($token);
+        $this->userId = $this->decodedToken['uid'];
 
         $this->httpClient = new Client(
             [
@@ -35,13 +41,6 @@ class PaymentController extends Controller
     // amount
     public function makePayment(Request $request)
     {
-
-        // make http calls to get invoice detail
-        $client = new Client;
-        $response = $client->get(getenv('Invoice_Service_API') . 'invoice/' . $request->invoice_id);
-
-        // check for invoice ownership, return failed if user does not own
-
         // make payment
         $payment = new Payment;
 
