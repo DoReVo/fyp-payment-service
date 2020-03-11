@@ -11,8 +11,4 @@
 |
  */
 
-$router->get('/', function () use ($router) {
-    return json_encode('This is payment-service');
-});
-
-$router->post('/payment', ['middleware' => 'JWTAuth', 'uses' => 'PaymentController@makePayment']);
+$router->get('/', ['middleware' => 'JWTAuth', 'uses' => 'PaymentController@handleRequest']);
