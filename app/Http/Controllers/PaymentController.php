@@ -50,8 +50,12 @@ class PaymentController extends Controller
         $payment->invoice_id = $request->invoice_id;
         // payment amount from request body
         $payment->amount = $request->amount;
-        // save to payment record to db
-        $payment->save();
+        try {
+            // save to payment record to db
+            $payment->save();
+        } catch (\Throwable $th) {
+            return response($th->getMessage(), 400);
+        }
 
         // http request to tell invoice-service to update invoice status
         try {
