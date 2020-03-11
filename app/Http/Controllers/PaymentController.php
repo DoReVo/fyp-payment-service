@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Payment;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 
@@ -21,7 +20,6 @@ class PaymentController extends Controller
 
         $this->httpClient = new Client(
             [
-                'base_uri' => getenv('INVOICE_SERVICE_API'),
                 'headers' =>
                 [
                     // take session_id cookie from request to be used in http call
@@ -32,32 +30,16 @@ class PaymentController extends Controller
         );
     }
 
-    // params require:
-    // invoice_id
-    // amount
-    public function makePayment(Request $request)
+    public function handleRequest()
     {
-        // payment model instance
-        $payment = new Payment;
-
-        // customer id from request body,
-        // it was injected by the SessionAuth middleware.
-        $payment->customer_id = $this->userId;
-        // invoice id from request body
-        $payment->invoice_id = $request->invoice_id;
-        // payment amount from request body
-        $payment->amount = $request->amount;
-        // save payment record to db
-        $payment->save();
-
         try {
+            $url = getenv('INVOICE_SERVICE_API');
             // http request to tell invoice-service to update invoice status
-            $invoice = $this->httpClient->patch('invoice/' . $request->invoice_id . '/pay', ['json' => ['payment_id' => $payment->id]]);
+            $invoice = $this->httpClient->get($url)->getBody();
+            return response($invoice, 200)->header('Content-Type', 'application/json');
         } catch (\Throwable $th) {
             return response()->json(array('error' => $th->getMessage()), 400);
         }
-
-        return response()->json($payment, 200);
 
     }
 }
