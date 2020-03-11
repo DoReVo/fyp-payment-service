@@ -17,14 +17,16 @@ class PaymentController extends Controller
     private $httpClient;
     public function __construct(Request $request)
     {
+        $this->userId = $request->userId;
 
         $this->httpClient = new Client(
             [
                 'base_uri' => getenv('INVOICE_SERVICE_API'),
                 'headers' =>
                 [
-                    // JWT token from this request
-                    'Authorization' => 'Bearer ' . $token,
+                    // take session_id cookie from request to be used in http call
+                    // to invoice-service
+                    "Cookie" => 'session_id=' . $request->cookie('session_id'),
                 ],
             ]
         );
@@ -35,27 +37,21 @@ class PaymentController extends Controller
     // amount
     public function makePayment(Request $request)
     {
-
-        // make http calls to get invoice detail
-        $client = new Client;
-        $response = $client->get(getenv('Invoice_Service_API') . 'invoice/' . $request->invoice_id);
-
-        // check for invoice ownership, return failed if user does not own
-
-        // make payment
+        // payment model instance
         $payment = new Payment;
 
-        // get customer id from request bearer token or cookies
+        // customer id from request body,
+        // it was injected by the SessionAuth middleware.
         $payment->customer_id = $this->userId;
         // invoice id from request body
         $payment->invoice_id = $request->invoice_id;
         // payment amount from request body
         $payment->amount = $request->amount;
-        // save to payment record to db
+        // save payment record to db
         $payment->save();
 
-        // http request to tell invoice-service to update invoice status
         try {
+            // http request to tell invoice-service to update invoice status
             $invoice = $this->httpClient->patch('invoice/' . $request->invoice_id . '/pay', ['json' => ['payment_id' => $payment->id]]);
         } catch (\Throwable $th) {
             return response()->json(array('error' => $th->getMessage()), 400);

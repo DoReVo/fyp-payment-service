@@ -15,4 +15,4 @@ $router->get('/', function () use ($router) {
     return json_encode('This is payment-service');
 });
 
-$router->post('/payment', ['uses' => 'PaymentController@makePayment']);
+$router->post('/payment', ['middleware' => 'SessionAuth', 'uses' => 'PaymentController@makePayment']);
